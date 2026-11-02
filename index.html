@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kaartenkluis</title>
+<meta name="theme-color" content="#1D3A8A">
+<meta name="description" content="Onze Pokémon-verzameling: kaarten, waarde, sets en zelf kaarten ontwerpen">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kaartenkluis">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --blue:#1D3A8A;--blue2:#2B4FB5;--sky:#E8EEFC;--sun:#FFC83D;--sunText:#5A3F00;--red:#E5484D;--green:#2E9D5B;
+  --bg:#F3F5FB;--panel:#FFFFFF;--line:#DCE2F0;--text:#17203A;--muted:#5A6482;--chip:#E8EEFC;
+  --good:#DDF3E5;--goodText:#1C6B3C;--bad:#FCE1E2;--badText:#9B1C21;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 Nunito,system-ui,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.big{font-family:"Baloo 2",Nunito,sans-serif;line-height:1.15;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+/* kop */
+header{position:sticky;top:0;z-index:20;background:var(--blue);color:#fff;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 10px}
+.hrow{display:flex;align-items:center;gap:10px;max-width:1000px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-family:"Baloo 2";font-weight:800;font-size:1.35rem;letter-spacing:.2px}
+.logo i{font-style:normal;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--sun);color:var(--blue);font-size:1rem}
+.hsp{flex:1}
+.ibtn{background:rgba(255,255,255,.14);border:0;border-radius:12px;color:#fff;min-width:40px;height:40px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.9rem}
+.ibtn:hover{background:rgba(255,255,255,.24)}
+.profs{display:flex;gap:8px;overflow-x:auto;max-width:1000px;margin:10px auto 0;scrollbar-width:none}
+.profs::-webkit-scrollbar{display:none}
+.pchip{flex:none;display:flex;align-items:center;gap:6px;border:2px solid transparent;background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:4px 14px 4px 5px;font-weight:700}
+.pchip .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:1.05rem;background:var(--c,#fff)}
+.pchip[aria-pressed="true"]{background:#fff;color:var(--blue);border-color:var(--sun)}
+.sync{font-size:.75rem;opacity:.85;max-width:1000px;margin:4px auto 0}
+
+main{max-width:1000px;margin:0 auto;padding:16px}
+.view h2{font-size:1.6rem;margin-bottom:10px}
+.seg{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px;overflow-x:auto}
+.seg button{flex:1;white-space:nowrap;border:0;background:none;border-radius:10px;padding:8px 12px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.inp{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;min-width:0}
+.inp:focus{outline:3px solid #9DB4F5;border-color:var(--blue2)}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:800;background:var(--blue);color:#fff;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{background:var(--blue2)}
+.btn.sun{background:var(--sun);color:var(--sunText)}
+.btn.ghost{background:var(--chip);color:var(--blue)}
+.btn.red{background:var(--bad);color:var(--badText)}
+.btn.sm{padding:6px 11px;font-size:.9rem;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:default}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.panel h3{font-size:1.2rem;margin-bottom:8px}
+.empty{text-align:center;padding:30px 16px;color:var(--muted)}
+.empty .em{font-size:2.6rem}
+
+/* kaartenraster */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px}
+.tile{position:relative;border:0;background:var(--panel);border-radius:14px;padding:6px 6px 8px;text-align:left;box-shadow:0 1px 0 var(--line),0 2px 8px rgba(29,58,138,.06);display:flex;flex-direction:column;gap:4px}
+.tile img{width:100%;aspect-ratio:63/88;object-fit:contain;border-radius:8px;background:#EEF1F8}
+.tile .tn{font-weight:700;font-size:.85rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .tp{font-size:.8rem;color:var(--muted)}
+.tile .cnt{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;font-weight:800;border-radius:999px;padding:1px 8px;font-size:.8rem}
+.tile.miss img{filter:grayscale(1);opacity:.38}
+.tile.own{outline:3px solid var(--green)}
+.tile.sel{outline:3px solid var(--sun);background:#FFF7DD}
+
+/* waarde */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.stat .big{font-size:2rem;color:var(--blue)}
+.stat.hero{background:var(--blue);color:#fff;border:0}
+.stat.hero .big{color:var(--sun);font-size:2.4rem}
+.hbar{display:flex;align-items:center;gap:10px;margin:8px 0}
+.hbar .lab{width:110px;flex:none;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .tr{flex:1;background:var(--sky);border-radius:999px;height:22px;overflow:hidden}
+.hbar .fi{height:100%;background:var(--c,var(--blue));border-radius:999px;min-width:4px}
+.hbar .val{width:86px;text-align:right;font-weight:700;flex:none}
+.chart svg{width:100%;height:auto;display:block}
+.top5{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px}
+.medal{position:absolute;top:-6px;left:-6px;font-size:1.4rem}
+
+/* sets */
+.setrow{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;text-align:left}
+.setrow .nm{font-weight:800}
+.prog{height:12px;background:var(--sky);border-radius:999px;overflow:hidden;margin-top:6px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#5CC98A);border-radius:999px}
+.setrow .pc{font-family:"Baloo 2";font-weight:800;font-size:1.3rem;color:var(--blue);width:58px;text-align:right;flex:none}
+
+/* ruilen */
+.trade{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.trade .col{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;min-width:0}
+.trade .grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.balance{text-align:center;font-weight:800;padding:12px;border-radius:14px;margin:12px 0}
+.balance.ok{background:var(--good);color:var(--goodText)}
+.balance.off{background:#FFF1CC;color:var(--sunText)}
+
+/* quiz */
+.qbox{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;text-align:center}
+.qq{font-family:"Baloo 2";font-size:1.4rem;font-weight:700;margin:6px 0 14px}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qopt{border:2px solid var(--line);background:var(--panel);border-radius:14px;padding:12px;font-weight:800;font-size:1.05rem}
+.qopt img{width:100%;max-width:200px;aspect-ratio:63/88;object-fit:contain;display:block;margin:0 auto 6px}
+.qopt.right{border-color:var(--green);background:var(--good)}
+.qopt.wrong{border-color:var(--red);background:var(--bad)}
+.qscore{display:flex;justify-content:space-between;font-weight:800;color:var(--muted)}
+
+/* zelf ontwerpen: kaart */
+.mycard{--cw:260px;--tc:#A8A29E;width:var(--cw);font-size:calc(var(--cw) / 20);aspect-ratio:63/88;border-radius:.9em;padding:.55em;background:linear-gradient(160deg,#FFE58A,#F2B935 55%,#E59E1E);box-shadow:0 .3em 1em rgba(0,0,0,.18);font-family:Nunito,sans-serif;color:#1d1d1d;flex:none}
+.mycard .in{height:100%;border-radius:.55em;padding:.45em .55em;display:flex;flex-direction:column;gap:.35em;background:linear-gradient(180deg,color-mix(in srgb,var(--tc) 38%,#fff),color-mix(in srgb,var(--tc) 18%,#fff));overflow:hidden}
+.mc-top{display:flex;align-items:baseline;gap:.3em}
+.mc-st{font-size:.6em;font-weight:800;background:#fff;border-radius:.5em;padding:0 .4em;align-self:center}
+.mc-name{font-family:"Baloo 2";font-weight:800;font-size:1.15em;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mc-hp{font-weight:800;font-size:.8em;color:#B3261E}
+.mc-sym{font-size:.95em}
+.mc-img{border:.18em solid #C9A23A;border-radius:.3em;background:#fff;aspect-ratio:3/2;overflow:hidden;box-shadow:inset 0 0 0 .1em #fff}
+.mc-img img{width:100%;height:100%;object-fit:cover;display:block}
+.mc-img .noimg{width:100%;height:100%;display:grid;place-items:center;color:#999;font-size:.7em}
+.mc-info{font-size:.5em;text-align:center;background:linear-gradient(90deg,#d9b44a,#f5e39a,#d9b44a);border-radius:.4em;padding:.15em;font-weight:700;font-style:italic}
+.mc-att{display:flex;align-items:center;gap:.35em;padding:.15em 0;border-bottom:.06em solid rgba(0,0,0,.15)}
+.mc-cost{display:flex;gap:.1em;font-size:.7em;width:3.2em;flex:none}
+.mc-att b{flex:1;font-size:.8em}
+.mc-dmg{font-family:"Baloo 2";font-weight:800;font-size:1em}
+.mc-desc{font-size:.52em;font-style:italic;border:.08em solid #C9A23A;border-radius:.4em;padding:.25em .4em;background:rgba(255,255,255,.55);flex:1;overflow:hidden}
+.mc-bot{display:flex;justify-content:space-between;font-size:.48em;font-weight:700;gap:.4em}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.dgrid .dt{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.dgrid .mycard{--cw:150px}
+
+.editor{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.editor .pv{position:sticky;top:0;display:flex;justify-content:center}
+.editor .pv .mycard{--cw:290px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.f>span{font-weight:800;font-size:.9rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.typepick{display:flex;flex-wrap:wrap;gap:6px}
+.typepick button{border:2px solid var(--line);background:var(--panel);border-radius:10px;padding:4px 8px;font-size:.85rem;font-weight:700}
+.typepick button[aria-pressed="true"]{border-color:var(--blue);background:var(--sky)}
+.draw{border:2px dashed var(--line);border-radius:14px;padding:8px;background:#fff;max-width:480px}
+.draw canvas{width:100%;aspect-ratio:3/2;background:#fff;border-radius:8px;touch-action:none;display:block;border:1px solid var(--line)}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--blue)}
+
+/* scannen */
+.cam{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:3/4;background:#0d1530;border-radius:18px;overflow:hidden}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .frame{position:absolute;left:50%;top:50%;height:84%;aspect-ratio:63/88;transform:translate(-50%,-50%);border:3px solid var(--sun);border-radius:14px;box-shadow:0 0 0 999px rgba(13,21,48,.45)}
+.cam .frame::before,.cam .frame::after{content:"";position:absolute;left:0;right:0;height:14%;border:2px dashed rgba(255,255,255,.7)}
+.cam .frame::before{top:0;border-width:0 0 2px}
+.cam .frame::after{bottom:0;border-width:2px 0 0}
+.cam .hint{position:absolute;left:0;right:0;bottom:8px;margin:0;text-align:center;color:#fff;font-weight:700;font-size:.85rem;text-shadow:0 1px 3px #000}
+.center{justify-content:center}
+.snapimg{display:block;max-width:180px;margin:0 auto 10px;border-radius:10px}
+.readout{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}
+
+/* modaal */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(15,22,45,.55);display:flex;align-items:flex-end;justify-content:center}
+.mbox{background:var(--bg);width:100%;max-width:760px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.mbox.wide{max-width:980px}
+.mhead{display:flex;align-items:center;gap:8px;margin-bottom:10px;position:sticky;top:-14px;background:var(--bg);padding:8px 0;z-index:2}
+.mhead h2{flex:1;font-size:1.4rem}
+.mx{border:0;background:var(--chip);color:var(--blue);border-radius:12px;min-width:40px;height:40px;font-size:1.2rem;font-weight:800}
+@media (min-width:700px){.modal{align-items:center}.mbox{border-radius:22px}}
+.cdet{display:grid;grid-template-columns:240px 1fr;gap:18px}
+.cdet img.big{width:100%;border-radius:12px;aspect-ratio:63/88;object-fit:contain;background:#EEF1F8}
+.kv{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.kv span{background:var(--chip);color:var(--blue);border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:700}
+.price{font-family:"Baloo 2";font-weight:800;font-size:2.2rem;color:var(--green)}
+.qty{display:flex;align-items:center;gap:10px;margin:12px 0}
+.qty .n{font-family:"Baloo 2";font-weight:800;font-size:1.6rem;min-width:40px;text-align:center}
+.qty button{width:46px;height:46px;border-radius:14px;border:0;font-size:1.5rem;font-weight:800;background:var(--blue);color:#fff}
+.qty button.minus{background:var(--chip);color:var(--blue)}
+.avs{display:flex;flex-wrap:wrap;gap:6px}
+.avs button{width:42px;height:42px;border-radius:12px;border:2px solid var(--line);background:var(--panel);font-size:1.3rem}
+.avs button[aria-pressed="true"]{border-color:var(--blue);background:var(--sky)}
+.prow{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:8px}
+.prow .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:1.2rem;background:var(--c)}
+.prow b{flex:1}
+.loading{padding:30px;text-align:center;color:var(--muted)}
+.spin{display:inline-block;width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* onderbalk */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .in{display:flex;max-width:640px;width:100%}
+nav.tabs button{flex:1;border:0;background:none;padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:1px;font-weight:700;font-size:.75rem;color:var(--muted)}
+nav.tabs button .ic{font-size:1.35rem;line-height:1.2}
+nav.tabs button[aria-current="page"]{color:var(--blue)}
+nav.tabs button[aria-current="page"] .ic{background:var(--sky);border-radius:10px;padding:0 14px}
+
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw;text-align:center}
+.lform{display:flex;flex-direction:column;gap:10px;max-width:360px}
+.err{color:var(--badText);font-weight:700;min-height:1.2em}
+#print{display:none}
+
+@media (max-width:640px){
+  .cdet{grid-template-columns:1fr}
+  .cdet img.big{max-width:260px;margin:0 auto;display:block}
+  .editor{grid-template-columns:1fr}
+  .editor .pv{position:static}
+  .editor .pv .mycard{--cw:250px}
+  .trade{grid-template-columns:1fr}
+  .stat .big{font-size:1.7rem}
+  .hbar .lab{width:80px}
+}
+@media print{
+  @page{margin:12mm}
+  body{background:#fff;padding:0}
+  body.printing>*:not(#print){display:none!important}
+  body.printing #print{display:flex!important;gap:6mm;flex-wrap:wrap}
+  #print .mycard{--cw:63mm;box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div class="logo"><i>★</i>Kaartenkluis</div>
+    <div class="hsp"></div>
+    <button class="ibtn" id="syncbtn" data-act="account" aria-label="Inloggen en synchroniseren">☁️</button>
+    <button class="ibtn" data-act="settings" aria-label="Instellingen">⚙️</button>
+  </div>
+  <div class="profs" id="profs" role="group" aria-label="Wiens verzameling"></div>
+  <div class="sync" id="sync" aria-live="polite"></div>
+</header>
+
+<main>
+  <section class="view" id="v-kaarten"></section>
+  <section class="view" id="v-waarde" hidden></section>
+  <section class="view" id="v-sets" hidden></section>
+  <section class="view" id="v-quiz" hidden></section>
+  <section class="view" id="v-maken" hidden></section>
+</main>
+
+<nav class="tabs" aria-label="Onderdelen"><div class="in">
+  <button data-tab="kaarten"><span class="ic">🃏</span>Kaarten</button>
+  <button data-tab="waarde"><span class="ic">💰</span>Waarde</button>
+  <button data-tab="sets"><span class="ic">📚</span>Sets</button>
+  <button data-tab="quiz"><span class="ic">❓</span>Quiz</button>
+  <button data-tab="maken"><span class="ic">🎨</span>Maken</button>
+</div></nav>
+
+<div class="modal" id="modal" hidden><div class="mbox" id="mbox" role="dialog" aria-modal="true" aria-labelledby="mtitle"></div></div>
+<div id="print"></div>
+
+<script>
+/* ---------- basis ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-5);
+const eur=v=>v==null||isNaN(v)?"–":"€ "+Number(v).toLocaleString("nl-NL",{minimumFractionDigits:2,maximumFractionDigits:2});
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let toastT;function toast(m){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+
+const TYPES={Grass:["Gras","🌿","#5BAA3A"],Fire:["Vuur","🔥","#E2552B"],Water:["Water","💧","#2F86D6"],Lightning:["Elektrisch","⚡","#E8B90F"],Psychic:["Psychisch","🔮","#9353C9"],Fighting:["Vechten","👊","#B5652E"],Darkness:["Duister","🌑","#3B3F58"],Metal:["Metaal","⚙️","#8A97A6"],Dragon:["Draak","🐉","#B08A1E"],Fairy:["Fee","🧚","#E07BB5"],Colorless:["Kleurloos","⭐","#A8A29E"]};
+const tName=t=>(TYPES[t]||[t])[0];
+const AVATARS=["🐉","⚡","🔥","💧","🌿","🦊","🐢","🦖","🌟","🎮","🐱","🐺","🦁","🚀"];
+const PCOLS=["#FFC83D","#7CC4FF","#FF8A80","#8BE0A4","#C9A7FF","#FFB774"];
+const PLACEHOLDER="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 63 88"><rect width="63" height="88" rx="5" fill="#DCE2F0"/><text x="31.5" y="52" font-size="26" text-anchor="middle" fill="#8A94B0" font-family="sans-serif">?</text></svg>');
+const imgUrl=(img,q="low")=>!img?PLACEHOLDER:(img.startsWith("data:")?img:`${img}/${q}.webp`);
+const imgTag=(img,alt,q)=>`<img src="${esc(imgUrl(img,q))}" alt="${esc(alt)}" loading="lazy" onerror="this.onerror=null;this.src='${PLACEHOLDER}'">`;
+
+/* ---------- gegevens ---------- */
+const KEY="kaartenkluis-v1";
+let state={v:1,ts:0,profiles:[],cards:[],wish:[],designs:[],hist:[]};
+function ensure(s){["profiles","cards","wish","designs","hist"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});return s}
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.profiles)state=ensure(s)}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast("Opslaan lukte niet op dit apparaat")}}
+function save(){recordHist();state.ts=Date.now();persist();schedulePush();syncLabel()}
+
+let cur=null;try{cur=localStorage.getItem(KEY+":cur")}catch(e){}
+const profs=()=>state.profiles.filter(p=>!p.del);
+const curP=()=>profs().find(p=>p.id===cur)||profs()[0]||null;
+const pById=id=>state.profiles.find(p=>p.id===id);
+const cardsOf=pid=>state.cards.filter(c=>!c.del&&c.p===pid);
+const wishOf=pid=>state.wish.filter(c=>!c.del&&c.p===pid);
+const valueOf=pid=>cardsOf(pid).reduce((s,c)=>s+(c.price||0)*(c.n||1),0);
+const countOf=pid=>cardsOf(pid).reduce((s,c)=>s+(c.n||1),0);
+function setCur(id){cur=id;try{localStorage.setItem(KEY+":cur",id)}catch(e){}renderAll()}
+
+function recordHist(){
+  const d=today();
+  profs().forEach(p=>{
+    const v=Math.round(valueOf(p.id)*100)/100;
+    const h=state.hist.find(x=>x.d===d&&x.p===p.id);
+    if(h)h.v=v;else state.hist.push({d,p:p.id,v});
+  });
+  profs().forEach(p=>{const l=state.hist.filter(h=>h.p===p.id).sort((a,b)=>a.d.localeCompare(b.d));if(l.length>400){const drop=new Set(l.slice(0,l.length-400));state.hist=state.hist.filter(h=>!drop.has(h))}});
+}
+
+/* ---------- kaartendatabase (TCGdex, prijzen van Cardmarket) ---------- */
+const TCG="https://api.tcgdex.net/v2/en";const apiCache=new Map();
+function api(path,fresh){
+  if(!fresh&&apiCache.has(path))return apiCache.get(path);
+  const p=window.MOCK_API?Promise.resolve().then(()=>window.MOCK_API(path)):fetch(TCG+path).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
+  apiCache.set(path,p);p.catch(()=>apiCache.delete(path));return p;
+}
+function priceOf(d){
+  const c=d&&d.pricing&&d.pricing.cardmarket;if(!c)return null;
+  for(const k of ["trend","avg","avg7","low","trend-holo","avg-holo","avg7-holo","low-holo"]){const v=+c[k];if(v>0)return Math.round(v*100)/100}
+  return null;
+}
+function infoFromDetail(d){
+  const s=d.set||{},cc=s.cardCount||{};
+  return {cid:d.id,name:d.name,num:d.localId||"",set:s.id||"",setName:s.name||"",setTotal:cc.official||cc.total||null,img:d.image||"",rarity:d.rarity||"",hp:d.hp||null,types:d.types||[],price:priceOf(d),pAt:Date.now()};
+}
+const getCard=cid=>api(`/cards/${encodeURIComponent(cid)}`);
+
+function addCard(d,pid=curP()?.id,n=1){
+  if(!pid)return;
+  const info=infoFromDetail(d);
+  let e=state.cards.find(c=>!c.del&&c.p===pid&&c.cid===info.cid);
+  if(e){Object.assign(e,info);e.n=(e.n||1)+n}
+  else state.cards.push(Object.assign({id:uid(),p:pid,n,added:Date.now()},info));
+  const w=state.wish.find(x=>!x.del&&x.p===pid&&x.cid===info.cid);
+  if(w){w.del=true;toast("Van je wensenlijst gehaald 🎉")}
+  save();
+}
+function changeCount(pid,cid,delta){
+  const e=state.cards.find(c=>!c.del&&c.p===pid&&c.cid===cid);if(!e)return;
+  e.n=(e.n||1)+delta;if(e.n<=0){e.n=0;e.del=true}
+  save();
+}
+function toggleWish(d,pid=curP()?.id){
+  const w=state.wish.find(x=>!x.del&&x.p===pid&&x.cid===d.id);
+  if(w){w.del=true;toast("Van je wensenlijst gehaald")}
+  else{state.wish.push(Object.assign({id:uid(),p:pid,added:Date.now()},infoFromDetail(d)));toast("Op je wensenlijst gezet ⭐")}
+  save();
+}
+
+/* ---------- modaal met terug-knop ---------- */
+const M=$("#modal"),MB=$("#mbox");let stack=[];
+function openM(title,render,opts={}){stack.push({title,render,wide:opts.wide,onClose:opts.onClose});drawM()}
+function replaceM(title,render,opts={}){stack.pop();openM(title,render,opts)}
+function drawM(){
+  const top=stack[stack.length-1];if(!top){M.hidden=true;MB.innerHTML="";return}
+  M.hidden=false;MB.classList.toggle("wide",!!top.wide);
+  MB.innerHTML=`<div class="mhead">${stack.length>1?'<button class="mx" data-act="mback" aria-label="Terug">‹</button>':""}<h2 id="mtitle">${esc(top.title)}</h2><button class="mx" data-act="mclose" aria-label="Sluiten">✕</button></div><div id="mbody">${top.render()}</div>`;
+  if(top.mount)top.mount();
+}
+function redrawM(){const y=MB.scrollTop;drawM();MB.scrollTop=y}
+function backM(){const t=stack.pop();if(t&&t.onClose)t.onClose();drawM();renderAll()}
+function closeM(){while(stack.length){const t=stack.pop();if(t.onClose)t.onClose()}drawM();renderAll()}
+M.addEventListener("click",e=>{if(e.target===M)closeM()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!M.hidden)backM()});
+
+/* ---------- navigatie ---------- */
+let tab="kaarten",sub="mijn";
+try{const t=localStorage.getItem(KEY+":tab");if(t)tab=t}catch(e){}
+function setTab(t){tab=t;try{localStorage.setItem(KEY+":tab",t)}catch(e){}renderAll();window.scrollTo({top:0})}
+function renderAll(){
+  renderProfs();
+  document.querySelectorAll("nav.tabs button").forEach(b=>{if(b.dataset.tab===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+tab);
+  ({kaarten:renderKaarten,waarde:renderWaarde,sets:renderSets,quiz:renderQuiz,maken:renderMaken}[tab]||renderKaarten)();
+}
+function renderProfs(){
+  const P=$("#profs"),c=curP();
+  P.innerHTML=profs().map(p=>`<button class="pchip" data-act="prof" data-id="${p.id}" aria-pressed="${c&&c.id===p.id}" style="--c:${esc(p.col)}"><span class="av">${esc(p.av)}</span>${esc(p.name)}</button>`).join("")||`<span class="small">Voeg eerst een verzamelaar toe via ⚙️</span>`;
+}
+
+/* ---------- KAARTEN ---------- */
+let kq="",ksort="nieuw";
+function tilesHTML(list,opts={}){
+  return `<div class="grid">${list.map(c=>`<button class="tile ${opts.cls?opts.cls(c):""}" data-act="${opts.act||"card"}" data-cid="${esc(c.cid)}" ${opts.data?opts.data(c):""}>
+    ${imgTag(c.img,c.name)}${(c.n||1)>1&&!opts.noCount?`<span class="cnt">×${c.n}</span>`:""}
+    <span class="tn">${esc(c.name)}</span><span class="tp">${opts.sub?opts.sub(c):eur(c.price)}</span></button>`).join("")}</div>`;
+}
+function sortList(l){
+  const by={nieuw:(a,b)=>(b.added||0)-(a.added||0),waarde:(a,b)=>(b.price||0)-(a.price||0),naam:(a,b)=>a.name.localeCompare(b.name),set:(a,b)=>(a.setName||"").localeCompare(b.setName||"")||parseInt(a.num)-parseInt(b.num)}[ksort];
+  return l.slice().sort(by);
+}
+function renderKaarten(){
+  const V=$("#v-kaarten"),p=curP();
+  if(!p){V.innerHTML=`<div class="empty"><div class="em">👋</div><p>Welkom in de Kaartenkluis!<br>Wie gaat er verzamelen?</p><button class="btn sun" data-act="settings">Verzamelaars toevoegen</button></div>`;return}
+  const segs={mijn:"Mijn kaarten",wens:"Wensenlijst",ruil:"Dubbel & ruilen"};
+  let h=`<div class="seg" role="group" aria-label="Weergave">${Object.keys(segs).map(k=>`<button data-act="sub" data-k="${k}" aria-pressed="${sub===k}">${segs[k]}</button>`).join("")}</div>`;
+  if(sub==="mijn"){
+    const all=cardsOf(p.id),q=kq.trim().toLowerCase();
+    const list=sortList(all.filter(c=>!q||c.name.toLowerCase().includes(q)||(c.setName||"").toLowerCase().includes(q)));
+    h+=`<div class="bar"><button class="btn sun" data-act="search">＋ Kaart toevoegen</button><button class="btn" data-act="scan">📷 Scannen</button>
+      <input class="inp" id="kq" type="search" placeholder="Zoek in mijn kaarten" value="${esc(kq)}" style="flex:1;min-width:140px" aria-label="Zoek in mijn kaarten">
+      <select class="inp" id="ksort" aria-label="Sorteren">${[["nieuw","Nieuwste eerst"],["waarde","Meeste waard"],["naam","Op naam"],["set","Per set"]].map(([k,t])=>`<option value="${k}" ${ksort===k?"selected":""}>${t}</option>`).join("")}</select></div>
+      <p class="muted small">${countOf(p.id)} kaarten · ${all.length} verschillend · samen ${eur(valueOf(p.id))}</p>`;
+    h+=all.length?tilesHTML(list):`<div class="empty"><div class="em">🃏</div><p>Nog geen kaarten. Zoek je eerste kaart op naam, bijvoorbeeld <b>Pikachu</b>.</p></div>`;
+  }else if(sub==="wens"){
+    const list=wishOf(p.id).sort((a,b)=>(b.price||0)-(a.price||0)),tot=list.reduce((s,c)=>s+(c.price||0),0);
+    h+=`<div class="bar"><button class="btn sun" data-act="search">＋ Kaart zoeken</button></div>`;
+    h+=list.length?`<p class="muted small">${list.length} wensen · samen ongeveer ${eur(tot)}. Handig voor het Sinterklaas- of verjaardagslijstje!</p>${tilesHTML(list,{noCount:true})}`:`<div class="empty"><div class="em">⭐</div><p>Je wensenlijst is leeg. Open een kaart en tik op <b>Op wensenlijst</b>.</p></div>`;
+  }else h+=tradeHTML();
+  V.innerHTML=h;
+  const kqi=$("#kq");if(kqi){kqi.oninput=()=>{kq=kqi.value;const pos=kqi.selectionStart;renderKaarten();const n=$("#kq");n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}
+  const ks=$("#ksort");if(ks)ks.onchange=()=>{ksort=ks.value;renderKaarten()};
+}
+
+/* zoeken */
+let sq="",snum="",sres=null,sbusy=false,serr="";
+function searchModal(){
+  openM("Kaart zoeken",()=>`<form id="sform" class="bar" autocomplete="off">
+      <input class="inp" id="sq" type="search" placeholder="Naam, bijv. Glurak of Charizard" value="${esc(sq)}" style="flex:2;min-width:160px" aria-label="Naam van de kaart">
+      <input class="inp" id="snum" inputmode="numeric" placeholder="Nummer" value="${esc(snum)}" style="width:96px" aria-label="Nummer op de kaart (optioneel)">
+      <button class="btn">Zoeken</button><button type="button" class="btn ghost" data-act="scan">📷 Scannen</button></form>
+    <p class="muted small">Tip: de kaarten zijn Engelstalig, dus zoek op de Engelse naam. Het nummer staat linksonder op de kaart (bijv. <b>25</b> van 25/165).</p>
+    <div id="sres">${sresHTML()}</div>`,{wide:true});
+  stack[stack.length-1].mount=()=>{
+    const f=$("#sform");f.onsubmit=e=>{e.preventDefault();sq=$("#sq").value;snum=$("#snum").value;runSearch()};
+    setTimeout(()=>{const i=$("#sq");if(i&&!sres)i.focus()},40);
+  };
+  drawM();
+}
+function sresHTML(){
+  if(sbusy)return `<div class="loading"><span class="spin"></span>Zoeken…</div>`;
+  if(serr)return `<div class="empty">${esc(serr)}</div>`;
+  if(!sres)return "";
+  if(!sres.length)return `<div class="empty"><div class="em">🔍</div>Niets gevonden. Klopt de spelling? Probeer alleen het begin van de naam.</div>`;
+  const mine=new Set(cardsOf(curP()?.id).map(c=>c.cid));
+  return `<p class="muted small">${sres.length>=60?"De eerste 60 kaarten. Vul het nummer in om te verfijnen.":sres.length+" kaarten gevonden"}</p>`+tilesHTML(sres.map(c=>({cid:c.id,name:c.name,img:c.image,num:c.localId})),{sub:c=>"#"+esc(c.num),noCount:true,cls:c=>mine.has(c.cid)?"own":""});
+}
+async function runSearch(){
+  const q=sq.trim();if(q.length<2){serr="Typ minstens 2 letters.";redrawM();return}
+  sbusy=true;serr="";redrawM();
+  try{
+    let l=await api(`/cards?name=${encodeURIComponent(q)}`);if(!Array.isArray(l))l=[];
+    if(snum.trim()){const n=parseInt(snum,10);l=l.filter(c=>parseInt(c.localId,10)===n)}
+    sres=l.slice().reverse().sort((x,y)=>(y.image?1:0)-(x.image?1:0)).slice(0,60);
+  }catch(e){serr=navigator.onLine?"De kaartendatabase reageert even niet. Probeer het zo nog eens.":"Je bent offline. Zoeken kan alleen met internet."}
+  sbusy=false;redrawM();
+}
+
+/* kaartdetail */
+async function cardModal(cid){
+  openM("Kaart",()=>`<div class="loading"><span class="spin"></span>Kaart laden…</div>`);
+  let d;
+  try{d=await getCard(cid)}catch(e){replaceM("Kaart",()=>`<div class="empty">Kon de kaart niet laden. Heb je internet?</div>`);return}
+  if(!stack.length)return;
+  replaceM(d.name,()=>cardHTML(d));
+}
+function cardHTML(d){
+  const p=curP(),pid=p&&p.id,own=state.cards.find(c=>!c.del&&c.p===pid&&c.cid===d.id),n=own?own.n:0;
+  const wished=state.wish.some(x=>!x.del&&x.p===pid&&x.cid===d.id);
+  const cm=(d.pricing&&d.pricing.cardmarket)||{},pr=priceOf(d),s=d.set||{},cc=s.cardCount||{};
+  const others=profs().filter(x=>x.id!==pid).map(x=>{const e=state.cards.find(c=>!c.del&&c.p===x.id&&c.cid===d.id);return e?`${esc(x.av)} ${esc(x.name)} ×${e.n}`:null}).filter(Boolean);
+  return `<div class="cdet"><div>${imgTag(d.image,d.name,"high").replace("<img","<img class=\"big\"")}</div><div>
+    <div class="kv">${s.name?`<span>📚 ${esc(s.name)}</span>`:""}<span>#${esc(d.localId)}${cc.official?" / "+cc.official:""}</span>${d.rarity?`<span>✨ ${esc(d.rarity)}</span>`:""}${d.hp?`<span>❤️ ${d.hp} HP</span>`:""}${(d.types||[]).map(t=>`<span>${(TYPES[t]||[])[1]||""} ${esc(tName(t))}</span>`).join("")}</div>
+    <div class="muted small">Waarde (Cardmarket)</div><div class="price">${pr==null?"Onbekend":eur(pr)}</div>
+    ${pr!=null?`<div class="muted small">Laagste aanbod ${eur(+cm.low||+cm["low-holo"]||null)} · gemiddeld laatste maand ${eur(+cm.avg30||+cm["avg30-holo"]||null)}</div>`:""}
+    ${p?`<div class="qty" aria-label="Aantal in ${esc(p.name)}s verzameling">
+      <button class="minus" data-act="cmin" data-cid="${esc(d.id)}" ${n?"":"disabled"} aria-label="Eén minder">−</button>
+      <span class="n" aria-live="polite">${n}</span>
+      <button data-act="cadd" data-cid="${esc(d.id)}" aria-label="Eén erbij">＋</button>
+      <span class="muted small">${n?`in ${esc(p.name)}s kluis`:"nog niet in je kluis"}</span></div>
+    <button class="btn ${wished?"ghost":"sun"}" data-act="cwish" data-cid="${esc(d.id)}">${wished?"✓ Op wensenlijst":"⭐ Op wensenlijst"}</button>`:""}
+    ${others.length?`<p class="small"><b>Ook in de kluis van:</b> ${others.join(", ")}</p>`:""}
+    ${d.illustrator?`<p class="muted small">Tekenaar: ${esc(d.illustrator)}</p>`:""}
+    <p class="muted small">De prijs is een richtprijs voor een kaart in goede staat. Een kaart met krasjes of kreukels is minder waard.</p>
+  </div></div>`;
+}
+
+/* ruilen */
+let trA=null,trB=null,selA=new Set(),selB=new Set();
+function tradeHTML(){
+  const P=profs();
+  if(P.length<2)return `<div class="empty"><div class="em">🤝</div><p>Ruilen kan als er minstens twee verzamelaars zijn. Voeg er een toe via ⚙️.</p></div>`;
+  if(!trA||!pById(trA)||pById(trA).del)trA=curP().id;
+  if(!trB||trB===trA||!pById(trB)||pById(trB).del)trB=P.find(x=>x.id!==trA).id;
+  const dbl=pid=>cardsOf(pid).filter(c=>c.n>1).sort((a,b)=>(b.price||0)-(a.price||0));
+  const A=dbl(trA),B=dbl(trB);
+  const sum=(l,s)=>l.filter(c=>s.has(c.id)).reduce((t,c)=>t+(c.price||0),0);
+  const va=sum(A,selA),vb=sum(B,selB),diff=Math.abs(va-vb),fair=diff<=Math.max(1,0.2*Math.max(va,vb));
+  const col=(pid,list,sel,side)=>{const p=pById(pid);return `<div class="col"><div class="bar"><select class="inp" data-trsel="${side}" aria-label="Verzamelaar ${side}">${P.map(x=>`<option value="${x.id}" ${x.id===pid?"selected":""}>${esc(x.av)} ${esc(x.name)}</option>`).join("")}</select></div>
+    <p class="small muted">${list.length?`${esc(p.name)} heeft ${list.length} kaarten dubbel. Tik wat je wilt ruilen.`:`${esc(p.name)} heeft nog geen dubbele kaarten.`}</p>
+    ${tilesHTML(list,{act:"trpick",data:c=>`data-side="${side}" data-id="${c.id}"`,cls:c=>sel.has(c.id)?"sel":""})}</div>`};
+  let h=`<p class="muted">Hier zie je alle dubbele kaarten. Kies van allebei wat je wilt ruilen; de Kaartenkluis rekent uit of het eerlijk is.</p><div class="trade">${col(trA,A,selA,"A")}${col(trB,B,selB,"B")}</div>`;
+  if(selA.size||selB.size){
+    h+=`<div class="balance ${fair?"ok":"off"}">${esc(pById(trA).name)} geeft ${eur(va)} · ${esc(pById(trB).name)} geeft ${eur(vb)}<br>${fair?"👍 Dat is een eerlijke ruil!":`⚖️ Scheelt ${eur(diff)}. ${va<vb?esc(pById(trA).name):esc(pById(trB).name)} mag er nog iets bij doen.`}</div>
+    <div style="text-align:center"><button class="btn" data-act="trdo">🤝 Ruil doen</button> <button class="btn ghost" data-act="trclear">Opnieuw kiezen</button></div>`;
+  }
+  return h;
+}
+function doTrade(){
+  const move=(from,to,sel)=>sel.forEach(id=>{const e=state.cards.find(c=>c.id===id&&!c.del&&c.p===from);if(!e||e.n<2)return;e.n--;
+    let t=state.cards.find(c=>!c.del&&c.p===to&&c.cid===e.cid);if(t)t.n=(t.n||1)+1;else{t=Object.assign({},e,{id:uid(),p:to,n:1,added:Date.now()});delete t.del;state.cards.push(t)}
+    const w=state.wish.find(x=>!x.del&&x.p===to&&x.cid===e.cid);if(w)w.del=true});
+  move(trA,trB,selA);move(trB,trA,selB);selA.clear();selB.clear();save();toast("Geruild! 🤝");renderKaarten();
+}
+
+/* ---------- WAARDE ---------- */
+let refreshing=null;
+function chartSVG(pid){
+  const pts=state.hist.filter(h=>h.p===pid).sort((a,b)=>a.d.localeCompare(b.d)).slice(-90);
+  if(pts.length<2)return `<p class="muted small">De grafiek groeit vanzelf: elke dag dat de app open gaat komt er een puntje bij.</p>`;
+  const W=900,H=220,pad=40,max=Math.max(...pts.map(p=>p.v),1)*1.1;
+  const x=i=>pad+i*(W-pad-10)/(pts.length-1),y=v=>H-24-(v/max)*(H-40);
+  const line=pts.map((p,i)=>`${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+  const fmt=d=>{const [yy,mm,dd]=d.split("-");return `${+dd}-${+mm}`};
+  const grid=[0,.5,1].map(f=>{const v=max/1.1*f;return `<line x1="${pad}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#DCE2F0"/><text x="${pad-4}" y="${y(v)+4}" font-size="11" text-anchor="end" fill="#5A6482">€${Math.round(v)}</text>`}).join("");
+  const last=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Waarde door de tijd, nu ${eur(last.v)}">${grid}
+    <polyline points="${pad},${H-24} ${line} ${x(pts.length-1)},${H-24}" fill="#2B4FB522" stroke="none"/>
+    <polyline points="${line}" fill="none" stroke="#2B4FB5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(pts.length-1)}" cy="${y(last.v)}" r="5" fill="#FFC83D" stroke="#1D3A8A" stroke-width="2"/>
+    <text x="${pad}" y="${H-6}" font-size="11" fill="#5A6482">${fmt(pts[0].d)}</text><text x="${W-10}" y="${H-6}" font-size="11" text-anchor="end" fill="#5A6482">${fmt(last.d)}</text></svg>`;
+}
+function renderWaarde(){
+  const V=$("#v-waarde"),p=curP();
+  if(!p){V.innerHTML=`<div class="empty">Voeg eerst een verzamelaar toe via ⚙️</div>`;return}
+  const cs=cardsOf(p.id),tot=valueOf(p.id),cnt=countOf(p.id);
+  const known=cs.filter(c=>c.price!=null),best=cs.slice().sort((a,b)=>(b.price||0)-(a.price||0)).slice(0,5);
+  const oldest=Math.min(...state.cards.filter(c=>!c.del).map(c=>c.pAt||0));
+  const buckets=[["Onder € 0,50",0,.5],["€ 0,50 – 2",.5,2],["€ 2 – 10",2,10],["€ 10 – 50",10,50],["Meer dan € 50",50,1e9]].map(([l,a,b])=>[l,cs.filter(c=>c.price!=null&&c.price>=a&&c.price<b).reduce((s,c)=>s+c.n,0)]);
+  const bmax=Math.max(1,...buckets.map(b=>b[1]));
+  const fam=profs().map(x=>({p:x,v:valueOf(x.id),n:countOf(x.id)})),fmax=Math.max(1,...fam.map(f=>f.v));
+  let h=`<h2>Wat is ${esc(p.name)}s kluis waard?</h2>
+  <div class="stats"><div class="stat hero"><div class="small">Totale waarde</div><div class="big">${eur(tot)}</div></div>
+    <div class="stat"><div class="small muted">Kaarten</div><div class="big">${cnt}</div></div>
+    <div class="stat"><div class="small muted">Gemiddeld per kaart</div><div class="big">${eur(cnt?tot/cnt:0)}</div></div>
+    <div class="stat"><div class="small muted">Duurste kaart</div><div class="big">${eur(best[0]?best[0].price:null)}</div></div></div>
+  <div class="bar"><button class="btn ghost sm" data-act="refresh" ${refreshing?"disabled":""}>${refreshing?`<span class="spin"></span>Prijzen bijwerken ${refreshing.done}/${refreshing.total}`:"🔄 Prijzen bijwerken"}</button>
+    <span class="muted small">${isFinite(oldest)&&oldest>0?"Prijzen van Cardmarket, bijgewerkt "+new Date(oldest).toLocaleDateString("nl-NL",{day:"numeric",month:"long"}):""}${cs.length-known.length?` · ${cs.length-known.length} kaarten zonder prijs`:""}</span></div>`;
+  if(!cs.length){V.innerHTML=h+`<div class="empty"><div class="em">💰</div>Voeg kaarten toe bij 🃏 Kaarten, dan zie je hier wat ze waard zijn.</div>`;return}
+  h+=`<div class="panel"><h3>🏆 Top 5 duurste kaarten</h3><div class="top5">${best.map((c,i)=>`<button class="tile" data-act="card" data-cid="${esc(c.cid)}"><span class="medal">${["🥇","🥈","🥉","4️⃣","5️⃣"][i]}</span>${imgTag(c.img,c.name)}<span class="tn">${esc(c.name)}</span><span class="tp"><b>${eur(c.price)}</b></span></button>`).join("")}</div></div>
+  <div class="panel chart"><h3>📈 Waarde door de tijd</h3>${chartSVG(p.id)}</div>
+  <div class="panel"><h3>🪙 Hoeveel kaarten in elke prijsklasse?</h3>${buckets.map(([l,n])=>`<div class="hbar"><span class="lab small">${l}</span><span class="tr"><span class="fi" style="width:${n/bmax*100}%;display:block;--c:var(--sun)"></span></span><span class="val">${n}</span></div>`).join("")}</div>`;
+  if(fam.length>1)h+=`<div class="panel"><h3>👨‍👦‍👦 De hele familie</h3>${fam.map(f=>`<div class="hbar"><span class="lab">${esc(f.p.av)} ${esc(f.p.name)}</span><span class="tr"><span class="fi" style="width:${f.v/fmax*100}%;display:block;--c:${esc(f.p.col)}"></span></span><span class="val">${eur(f.v)}</span></div>`).join("")}<p class="muted small">Samen ${fam.reduce((s,f)=>s+f.n,0)} kaarten, waarde ${eur(fam.reduce((s,f)=>s+f.v,0))}.</p></div>`;
+  V.innerHTML=h;
+}
+async function refreshPrices(force){
+  if(refreshing)return;
+  const all=[...state.cards,...state.wish].filter(c=>!c.del&&(force||!c.pAt||Date.now()-c.pAt>20*3600e3));
+  const ids=[...new Set(all.map(c=>c.cid))];
+  if(!ids.length){if(force)toast("Alle prijzen zijn al bijgewerkt");return}
+  refreshing={done:0,total:ids.length};if(tab==="waarde")renderWaarde();
+  let i=0,fail=0;
+  const work=async()=>{while(i<ids.length){const cid=ids[i++];
+    try{const d=await api(`/cards/${encodeURIComponent(cid)}`,true);const pr=priceOf(d);
+      [...state.cards,...state.wish].forEach(c=>{if(c.cid===cid){c.price=pr;c.pAt=Date.now()}})}catch(e){fail++}
+    refreshing.done++;if(tab==="waarde"&&refreshing.done%3===0)renderWaarde()}};
+  await Promise.all([work(),work(),work(),work()]);
+  refreshing=null;save();renderAll();
+  if(force)toast(fail?`${ids.length-fail} prijzen bijgewerkt, ${fail} lukten niet`:"Alle prijzen zijn bijgewerkt");
+}
+
+/* ---------- SETS ---------- */
+let setMissingOnly=false;
+function renderSets(){
+  const V=$("#v-sets"),p=curP();
+  if(!p){V.innerHTML=`<div class="empty">Voeg eerst een verzamelaar toe via ⚙️</div>`;return}
+  const by={};cardsOf(p.id).forEach(c=>{if(!c.set)return;(by[c.set]=by[c.set]||{id:c.set,name:c.setName,total:c.setTotal,own:new Set()}).own.add(c.num)});
+  const list=Object.values(by).map(s=>Object.assign(s,{n:s.own.size,pct:s.total?Math.min(100,Math.round(s.own.size/s.total*100)):0})).sort((a,b)=>b.pct-a.pct);
+  V.innerHTML=`<h2>Sets compleet maken</h2><p class="muted">Elke kaart hoort bij een set. Hoeveel heb jij er al van?</p>`+
+   (list.length?list.map(s=>`<button class="setrow" data-act="set" data-id="${esc(s.id)}"><div style="flex:1;min-width:0"><div class="nm">${esc(s.name||s.id)}</div><div class="small muted">${s.n} van ${s.total||"?"} kaarten</div><div class="prog"><i style="width:${s.pct}%"></i></div></div><span class="pc">${s.pct}%</span></button>`).join("")
+   :`<div class="empty"><div class="em">📚</div>Zodra je kaarten hebt, zie je hier per set hoe ver je bent.</div>`);
+}
+async function setModal(id){
+  openM("Set",()=>`<div class="loading"><span class="spin"></span>Set laden…</div>`,{wide:true});
+  let s;try{s=await api(`/sets/${encodeURIComponent(id)}`)}catch(e){replaceM("Set",()=>`<div class="empty">Kon de set niet laden. Heb je internet?</div>`);return}
+  if(!stack.length)return;
+  replaceM(s.name,()=>{
+    const p=curP(),own=new Map(cardsOf(p.id).map(c=>[c.cid,c])),wish=new Set(wishOf(p.id).map(c=>c.cid));
+    const cards=(s.cards||[]),have=cards.filter(c=>own.has(c.id)).length,total=(s.cardCount&&(s.cardCount.official||s.cardCount.total))||cards.length;
+    const shown=setMissingOnly?cards.filter(c=>!own.has(c.id)):cards;
+    return `<p><b>${esc(p.name)}</b> heeft <b>${have}</b> van de ${total} kaarten.</p><div class="prog" style="margin-bottom:12px"><i style="width:${Math.min(100,have/total*100)}%"></i></div>
+      <div class="seg" role="group" aria-label="Filter"><button data-act="setall" aria-pressed="${!setMissingOnly}">Alle kaarten</button><button data-act="setmiss" aria-pressed="${setMissingOnly}">Alleen ontbrekend</button></div>
+      <p class="muted small">Grijze kaarten heb je nog niet. Tik op een kaart voor de prijs, of om hem op je wensenlijst te zetten.</p>
+      ${tilesHTML(shown.map(c=>({cid:c.id,name:c.name,img:c.image,num:c.localId,n:own.has(c.id)?own.get(c.id).n:0})),{sub:c=>"#"+esc(c.num)+(wish.has(c.cid)?" ⭐":""),cls:c=>own.has(c.cid)?"":"miss"})}`;
+  },{wide:true});
+}
+
+/* ---------- QUIZ ---------- */
+let quiz=null;
+function quizPool(){const m=new Map();state.cards.filter(c=>!c.del).forEach(c=>{if(!m.has(c.cid))m.set(c.cid,c)});return [...m.values()]}
+function makeQuestions(){
+  const pool=quizPool(),qs=[],sets=[...new Set(pool.map(c=>c.setName).filter(Boolean))];
+  const tries=60;
+  for(let t=0;t<tries&&qs.length<10;t++){
+    const kind=["duur","duur","hp","type","set"][Math.floor(Math.random()*5)];
+    if(kind==="duur"){const pr=shuffle(pool.filter(c=>c.price>0));if(pr.length<2)continue;const [a,b]=pr;if(Math.max(a.price,b.price)<1.25*Math.min(a.price,b.price))continue;
+      qs.push({k:"duur",q:"Welke kaart is meer waard?",opts:[a,b].map(c=>({img:c.img,label:c.name,c})),ans:a.price>b.price?0:1,info:`${a.name}: ${eur(a.price)} · ${b.name}: ${eur(b.price)}`})}
+    if(kind==="hp"){const c=shuffle(pool.filter(c=>c.hp))[0];if(!c)continue;const o=new Set([c.hp]);while(o.size<4){const v=Math.max(30,c.hp+(Math.floor(Math.random()*9)-4)*10);o.add(v)}const opts=shuffle([...o]);
+      qs.push({k:"hp",q:`Hoeveel HP heeft ${c.name}?`,sub:c.setName,opts:opts.map(v=>({label:v+" HP"})),ans:opts.indexOf(c.hp),info:`${c.name} heeft ${c.hp} HP`,show:c})}
+    if(kind==="type"){const c=shuffle(pool.filter(c=>c.types&&c.types.length))[0];if(!c)continue;const tt=c.types[0];const opts=shuffle([tt,...shuffle(Object.keys(TYPES).filter(x=>x!==tt)).slice(0,3)]);
+      qs.push({k:"type",q:`Welk type is ${c.name}?`,sub:c.setName,opts:opts.map(x=>({label:TYPES[x][1]+" "+TYPES[x][0]})),ans:opts.indexOf(tt),info:`${c.name} is ${tName(tt)}`,show:c})}
+    if(kind==="set"){if(sets.length<3)continue;const c=shuffle(pool.filter(c=>c.setName))[0];const opts=shuffle([c.setName,...shuffle(sets.filter(s=>s!==c.setName)).slice(0,3)]);
+      qs.push({k:"set",q:`Uit welke set komt deze ${c.name}?`,opts:opts.map(s=>({label:s})),ans:opts.indexOf(c.setName),info:`Uit ${c.setName}`,img:c.img})}
+  }
+  return qs;
+}
+function renderQuiz(){
+  const V=$("#v-quiz"),p=curP();
+  if(!p){V.innerHTML=`<div class="empty">Voeg eerst een verzamelaar toe via ⚙️</div>`;return}
+  const pool=quizPool();
+  if(pool.length<4){V.innerHTML=`<h2>Kaarten-quiz</h2><div class="empty"><div class="em">❓</div>De quiz gebruikt kaarten uit de kluis. Voeg er eerst minstens 4 toe!</div>`;return}
+  if(!quiz){V.innerHTML=`<h2>Kaarten-quiz</h2><div class="qbox"><div class="em" style="font-size:3rem">🧠</div><p class="qq">Hoe goed ken jij je kaarten?</p>
+    <p class="muted">10 vragen over de kaarten in de kluis: welke is duurder, hoeveel HP, welk type, welke set.</p>
+    <p><b>${esc(p.name)}s record: ${p.best||0} van 10</b></p><button class="btn sun" data-act="qstart">Start de quiz</button></div>`;return}
+  if(quiz.i>=quiz.qs.length){
+    const nieuw=quiz.score>(p.best||0);if(nieuw&&!quiz.saved){p.best=quiz.score;quiz.saved=true;save()}
+    V.innerHTML=`<h2>Kaarten-quiz</h2><div class="qbox"><div style="font-size:3rem">${quiz.score>=8?"🏆":quiz.score>=5?"🎉":"💪"}</div><p class="qq">${quiz.score} van de ${quiz.qs.length} goed!</p>${nieuw||quiz.saved?`<p><b>Nieuw record voor ${esc(p.name)}!</b></p>`:""}<button class="btn sun" data-act="qstart">Nog een keer</button></div>`;return}
+  const q=quiz.qs[quiz.i],a=quiz.answered;
+  V.innerHTML=`<h2>Kaarten-quiz</h2><div class="qbox"><div class="qscore"><span>Vraag ${quiz.i+1} van ${quiz.qs.length}</span><span>⭐ ${quiz.score}</span></div>
+    ${q.img?`<img src="${esc(imgUrl(q.img))}" alt="" style="width:150px;aspect-ratio:63/88;object-fit:contain;margin-top:10px">`:""}
+    <p class="qq">${esc(q.q)}</p>${q.sub?`<p class="muted small" style="margin-top:-10px">Uit de set ${esc(q.sub)}</p>`:""}
+    <div class="qopts">${q.opts.map((o,i)=>`<button class="qopt ${a!=null?(i===q.ans?"right":i===a?"wrong":""):""}" data-act="qans" data-i="${i}" ${a!=null?"disabled":""}>${o.img?`<img src="${esc(imgUrl(o.img))}" alt="">`:""}${esc(o.label)}</button>`).join("")}</div>
+    ${a!=null?`<p style="margin-top:14px"><b>${a===q.ans?"✅ Goed zo!":"❌ Helaas!"}</b> ${esc(q.info)}</p>${q.show?`<img src="${esc(imgUrl(q.show.img))}" alt="${esc(q.show.name)}" style="width:150px;aspect-ratio:63/88;object-fit:contain">`:""}<p><button class="btn" data-act="qnext">Volgende ›</button></p>`:""}</div>`;
+}
+
+/* ---------- MAKEN: zelf een kaart ontwerpen ---------- */
+const STAGES=["Basis","Fase 1","Fase 2","Legendarisch"];
+function newDesign(){return {id:uid(),p:curP().id,name:"",hp:70,type:"Fire",stage:"Basis",img:"",info:"",a1:{n:"",d:"",e:1},a2:{n:"",d:"",e:2},weak:"Water",desc:"",stars:1,upd:Date.now()}}
+function designHTML(d){
+  const t=TYPES[d.type]||TYPES.Colorless,maker=pById(d.p);
+  const cost=e=>Array.from({length:Math.max(0,Math.min(4,+e||0))},()=>t[1]).join("")||"⭐";
+  const att=a=>a&&a.n?`<div class="mc-att"><span class="mc-cost">${cost(a.e)}</span><b>${esc(a.n)}</b><span class="mc-dmg">${esc(a.d)}</span></div>`:"";
+  return `<div class="mycard" style="--tc:${t[2]}"><div class="in">
+    <div class="mc-top"><span class="mc-st">${esc(d.stage||"Basis")}</span><span class="mc-name">${esc(d.name||"Naam")}</span><span class="mc-hp">${esc(d.hp)} HP</span><span class="mc-sym">${t[1]}</span></div>
+    <div class="mc-img">${d.img?`<img src="${esc(d.img)}" alt="">`:`<div class="noimg">teken of kies een plaatje</div>`}</div>
+    <div class="mc-info">${esc(d.info||t[0]+"-kaart")}</div>
+    ${att(d.a1)}${att(d.a2)}
+    <div class="mc-desc">${esc(d.desc||"")}</div>
+    <div class="mc-bot"><span>Zwakte: ${(TYPES[d.weak]||["",""])[1]} ×2</span><span>${"★".repeat(d.stars||1)}</span><span>Door ${esc(maker?maker.name:"?")}</span></div>
+  </div></div>`;
+}
+function renderMaken(){
+  const V=$("#v-maken"),p=curP();
+  if(!p){V.innerHTML=`<div class="empty">Voeg eerst een verzamelaar toe via ⚙️</div>`;return}
+  const ds=state.designs.filter(d=>!d.del).sort((a,b)=>(a.p===p.id?0:1)-(b.p===p.id?0:1)||b.upd-a.upd);
+  V.innerHTML=`<h2>Ontwerp je eigen kaart</h2><p class="muted">Verzin een eigen wezen, teken het, geef het aanvallen en print je kaart!</p>
+   <div class="bar"><button class="btn sun" data-act="dnew">🎨 Nieuwe kaart maken</button></div>
+   ${ds.length?`<div class="dgrid">${ds.map(d=>`<button class="dt" data-act="dedit" data-id="${d.id}">${designHTML(d)}</button>`).join("")}</div>`:`<div class="empty"><div class="em">✏️</div>Nog geen eigen kaarten. Maak de eerste!</div>`}`;
+}
+let ed=null,pen={c:"#1d1d1d",s:6,erase:false};
+function editorModal(d){
+  ed=JSON.parse(JSON.stringify(d));
+  const typeBtns=(field)=>Object.keys(TYPES).map(k=>`<button type="button" data-act="edtype" data-f="${field}" data-k="${k}" aria-pressed="${ed[field]===k}">${TYPES[k][1]} ${TYPES[k][0]}</button>`).join("");
+  const attF=(k,l)=>`<div class="f"><span>${l}</span><div class="row3"><input class="inp" data-ef="${k}.n" placeholder="Naam aanval" maxlength="22" value="${esc(ed[k].n)}" aria-label="${l} naam"><input class="inp" data-ef="${k}.d" placeholder="Schade" maxlength="5" value="${esc(ed[k].d)}" aria-label="${l} schade"><select class="inp" data-ef="${k}.e" aria-label="${l} energie">${[1,2,3,4].map(n=>`<option value="${n}" ${+ed[k].e===n?"selected":""}>${n} energie</option>`).join("")}</select></div></div>`;
+  const COLS=["#1d1d1d","#ffffff","#E5484D","#F7931E","#FFC83D","#2E9D5B","#2F86D6","#9353C9","#8B5A2B","#F48FB1","#9CA3AF"];
+  openM(state.designs.some(x=>x.id===ed.id&&!x.del)?"Kaart aanpassen":"Nieuwe kaart",()=>`<div class="editor"><div>
+    <div class="row2"><label class="f"><span>Naam</span><input class="inp" data-ef="name" maxlength="18" value="${esc(ed.name)}" placeholder="Bijv. Vlammo"></label>
+      <label class="f"><span>Levenspunten: <b id="hpv">${ed.hp}</b> HP</span><input type="range" min="30" max="300" step="10" data-ef="hp" value="${ed.hp}"></label></div>
+    <div class="f"><span>Type</span><div class="typepick">${typeBtns("type")}</div></div>
+    <div class="f"><span>Plaatje</span><div class="draw"><canvas id="cv" width="450" height="300" aria-label="Tekenvlak"></canvas>
+      <div class="tools">${COLS.map(c=>`<button type="button" class="sw" style="background:${c}" data-act="pen" data-c="${c}" aria-label="Kleur ${c}" aria-pressed="${!pen.erase&&pen.c===c}"></button>`).join("")}
+        <select class="inp" id="psize" aria-label="Dikte">${[[3,"Dun"],[6,"Normaal"],[12,"Dik"],[24,"Extra dik"]].map(([v,t])=>`<option value="${v}" ${pen.s===v?"selected":""}>${t}</option>`).join("")}</select>
+        <button type="button" class="btn ghost sm" data-act="erase" aria-pressed="${pen.erase}">🧽 Gum</button>
+        <button type="button" class="btn ghost sm" data-act="fill">🪣 Achtergrond</button>
+        <button type="button" class="btn ghost sm" data-act="clear">🗑️ Wissen</button>
+        <label class="btn ghost sm">📷 Foto<input type="file" accept="image/*" id="photo" hidden></label></div></div></div>
+    <div class="row2"><label class="f"><span>Fase</span><select class="inp" data-ef="stage">${STAGES.map(s=>`<option ${ed.stage===s?"selected":""}>${s}</option>`).join("")}</select></label>
+      <label class="f"><span>Soort wezen</span><input class="inp" data-ef="info" maxlength="30" value="${esc(ed.info)}" placeholder="Bijv. Vuurdraak-wezen"></label></div>
+    ${attF("a1","Aanval 1")}${attF("a2","Aanval 2")}
+    <div class="f"><span>Zwakte (tegen dit type kan hij slecht)</span><div class="typepick">${typeBtns("weak")}</div></div>
+    <label class="f"><span>Verhaaltje</span><textarea class="inp" data-ef="desc" rows="2" maxlength="120" placeholder="Wat kan dit wezen? Waar woont het?">${esc(ed.desc)}</textarea></label>
+    <label class="f"><span>Zeldzaamheid</span><select class="inp" data-ef="stars">${[1,2,3].map(n=>`<option value="${n}" ${+ed.stars===n?"selected":""}>${"★".repeat(n)} ${["Gewoon","Zeldzaam","Super zeldzaam"][n-1]}</option>`).join("")}</select></label>
+    <div class="bar"><button class="btn sun" data-act="dsave">💾 Opslaan</button><button class="btn ghost" data-act="dprint">🖨️ Printen</button>${state.designs.some(x=>x.id===ed.id&&!x.del)?`<button class="btn red" data-act="ddel">Verwijderen</button>`:""}</div>
+  </div><div class="pv" id="dpv">${designHTML(ed)}</div></div>`,{wide:true});
+  stack[stack.length-1].mount=mountEditor;drawM();
+}
+function mountEditor(){
+  const pv=$("#dpv"),upd=()=>{pv.innerHTML=designHTML(ed)};
+  MB.querySelectorAll("[data-ef]").forEach(el=>{el.addEventListener("input",()=>{
+    const [a,b]=el.dataset.ef.split(".");let v=el.value;if(["hp","stars"].includes(a)||b==="e")v=+v;
+    if(b)ed[a][b]=v;else ed[a]=v;if(a==="hp")$("#hpv").textContent=v;upd()})});
+  const cv=$("#cv"),ctx=cv.getContext("2d");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);
+  if(ed.img){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,cv.width,cv.height);im.src=ed.img}
+  let drawing=false,last=null;
+  const pos=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+  cv.onpointerdown=e=>{drawing=true;last=pos(e);try{cv.setPointerCapture(e.pointerId)}catch(_){}dot(last)};
+  cv.onpointermove=e=>{if(!drawing)return;const p=pos(e);ctx.strokeStyle=pen.erase?"#fff":pen.c;ctx.lineWidth=pen.erase?pen.s*2.5:pen.s;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(...last);ctx.lineTo(...p);ctx.stroke();last=p};
+  const end=()=>{if(!drawing)return;drawing=false;commitCanvas()};
+  cv.onpointerup=end;cv.onpointerleave=end;cv.onpointercancel=end;
+  function dot(p){ctx.fillStyle=pen.erase?"#fff":pen.c;ctx.beginPath();ctx.arc(p[0],p[1],(pen.erase?pen.s*2.5:pen.s)/2,0,7);ctx.fill()}
+  $("#psize").onchange=e=>{pen.s=+e.target.value};
+  $("#photo").onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{
+    const r=Math.max(cv.width/im.width,cv.height/im.height),w=im.width*r,h=im.height*r;ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(im,(cv.width-w)/2,(cv.height-h)/2,w,h);URL.revokeObjectURL(im.src);commitCanvas()};im.src=URL.createObjectURL(f)};
+}
+function commitCanvas(){const cv=$("#cv");if(!cv)return;ed.img=cv.toDataURL("image/jpeg",0.82);$("#dpv").innerHTML=designHTML(ed)}
+function saveDesign(){
+  if(!ed.name.trim()){toast("Geef je kaart eerst een naam");MB.querySelector('[data-ef="name"]').focus();return false}
+  ed.upd=Date.now();const i=state.designs.findIndex(x=>x.id===ed.id);
+  if(i>=0)state.designs[i]=Object.assign(state.designs[i],ed);else state.designs.push(ed);
+  save();toast("Kaart opgeslagen 🎨");return true;
+}
+function printDesign(d){
+  const P=$("#print");P.innerHTML=designHTML(d)+designHTML(d);document.body.classList.add("printing");
+  const done=()=>{document.body.classList.remove("printing");P.innerHTML="";window.removeEventListener("afterprint",done)};
+  window.addEventListener("afterprint",done);setTimeout(()=>{window.print();setTimeout(done,1500)},200);
+}
+
+/* ---------- instellingen en verzamelaars ---------- */
+let newAv=AVATARS[0];
+function settingsModal(){
+  openM("Instellingen",()=>{
+    const P=profs();
+    return `<div class="panel"><h3>Verzamelaars</h3>${P.map(p=>`<div class="prow"><span class="av" style="--c:${esc(p.col)}">${esc(p.av)}</span><b>${esc(p.name)}</b><span class="muted small">${countOf(p.id)} kaarten</span><button class="btn ghost sm" data-act="pedit" data-id="${p.id}">Aanpassen</button></div>`).join("")||`<p class="muted">Nog niemand. Voeg hieronder de eerste verzamelaar toe!</p>`}
+      <form id="pform" class="f" style="margin-top:12px"><span>Nieuwe verzamelaar</span><input class="inp" id="pname" maxlength="16" placeholder="Naam" aria-label="Naam"><div class="avs" role="group" aria-label="Kies een plaatje">${AVATARS.map(a=>`<button type="button" data-act="pav" data-a="${a}" aria-pressed="${newAv===a}">${a}</button>`).join("")}</div><div><button class="btn sun">＋ Toevoegen</button></div></form></div>
+    <div class="panel"><h3>Synchroniseren</h3><p class="muted small" id="astat2">${esc(syncText())}</p><button class="btn ghost" data-act="account">${user?"Account":"Inloggen met gezinsaccount"}</button></div>
+    <div class="panel"><h3>Reservekopie</h3><p class="muted small">Download alle kaarten en ontwerpen als bestand, voor de zekerheid.</p><button class="btn ghost" data-act="backup">⬇️ Download reservekopie</button></div>
+    <p class="muted small">Kaartgegevens en plaatjes: TCGdex. Prijzen: Cardmarket (trendprijs in euro). Pokémon is een merk van Nintendo, Creatures en GAME FREAK; deze app is alleen voor thuisgebruik.</p>`;
+  });
+  stack[stack.length-1].mount=()=>{$("#pform").onsubmit=e=>{e.preventDefault();const n=$("#pname").value.trim();if(!n){$("#pname").focus();return}
+    const p={id:uid(),name:n,av:newAv,col:PCOLS[profs().length%PCOLS.length]};state.profiles.push(p);if(!curP()||profs().length===1)cur=p.id;try{localStorage.setItem(KEY+":cur",cur)}catch(_){}
+    save();toast(`${n} doet mee! ${newAv}`);newAv=AVATARS[(AVATARS.indexOf(newAv)+1)%AVATARS.length];redrawM();renderProfs()}};
+  drawM();
+}
+function profileModal(id){
+  const p=pById(id);let av=p.av,col=p.col;
+  openM(p.name,()=>`<label class="f"><span>Naam</span><input class="inp" id="ename" maxlength="16" value="${esc(p.name)}"></label>
+    <div class="f"><span>Plaatje</span><div class="avs">${AVATARS.map(a=>`<button type="button" data-act="eav" data-a="${a}" aria-pressed="${av===a}">${a}</button>`).join("")}</div></div>
+    <div class="f"><span>Kleur</span><div class="tools">${PCOLS.map(c=>`<button type="button" class="sw" style="background:${c}" data-act="ecol" data-c="${c}" aria-pressed="${col===c}" aria-label="Kleur"></button>`).join("")}</div></div>
+    <div class="bar"><button class="btn sun" data-act="esave">Opslaan</button><button class="btn red" data-act="edel">Verwijderen</button></div>`);
+  const top=stack[stack.length-1];
+  top.state={get av(){return av},set av(v){av=v},get col(){return col},set col(v){col=v},p};
+  drawM();
+}
+
+/* ---------- SCANNEN: naam en nummer lezen met de camera (Tesseract, draait op het apparaat) ---------- */
+const OCR_JS="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const OCR_OPT={workerPath:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",corePath:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",langPath:"https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"};
+let ocrWorker=null,ocrLoading=null,camStream=null,scan={phase:"cam",msg:"",img:"",name:"",num:"",total:"",cands:null};
+function loadScript(src){return new Promise((ok,ko)=>{if([...document.scripts].some(s=>s.src===src))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>ko(new Error("script"));document.head.appendChild(s)})}
+function getOcr(){
+  if(ocrWorker)return Promise.resolve(ocrWorker);
+  if(!ocrLoading)ocrLoading=(async()=>{
+    if(!window.Tesseract)await loadScript(window.OCR_SCRIPT||OCR_JS);
+    const w=await Tesseract.createWorker("eng",1,Object.assign({},OCR_OPT,window.OCR_OPT||{}));
+    ocrWorker=w;return w;
+  })().catch(e=>{ocrLoading=null;throw e});
+  return ocrLoading;
+}
+function stopCam(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null}}
+function scanModal(){
+  scan={phase:"cam",msg:"",img:"",name:"",num:"",total:"",cands:null};
+  openM("Kaart scannen",scanHTML,{wide:false,onClose:stopCam});
+  stack[stack.length-1].mount=mountScan;drawM();
+  getOcr().catch(()=>{});
+}
+function scanHTML(){
+  if(scan.phase==="cam")return `<div class="cam" id="cam"><video id="vid" playsinline muted autoplay></video><div class="frame"></div><p class="hint">Leg de kaart precies in het gele kader</p></div>
+    <p class="muted small" style="text-align:center">Zorg voor genoeg licht en houd de telefoon stil. De naam (bovenaan) en het nummer (onderaan) moeten goed leesbaar zijn.</p>
+    <div class="bar center"><button class="btn sun" data-act="snap" id="snapbtn">📸 Foto maken</button><label class="btn ghost">🖼️ Kies een foto<input type="file" accept="image/*" capture="environment" id="sfile" hidden></label></div>
+    <p class="err small" style="text-align:center">${esc(scan.msg)}</p>`;
+  const ro=`<div class="readout"><b>Dit heb ik gelezen</b> <span class="muted small">(klopt het niet? Pas het aan)</span>
+    <div class="bar" style="margin:8px 0 0"><input class="inp" id="scname" value="${esc(scan.name)}" placeholder="Naam" aria-label="Naam" style="flex:2;min-width:120px">
+    <input class="inp" id="scnum" value="${esc(scan.num)}" inputmode="numeric" placeholder="Nr" aria-label="Nummer" style="width:70px"><span>/</span><input class="inp" id="sctot" value="${esc(scan.total)}" inputmode="numeric" placeholder="Totaal" aria-label="Totaal in set" style="width:76px">
+    <button class="btn sm" data-act="rescan">Zoeken</button></div></div>`;
+  const top=`${scan.img?`<img class="snapimg" src="${scan.img}" alt="Gemaakte foto">`:""}`;
+  if(scan.phase==="busy")return top+`<div class="loading"><span class="spin"></span>${esc(scan.msg||"Kaart lezen…")}</div>`;
+  const c=scan.cands||[];
+  const mine=new Set(cardsOf(curP()?.id).map(x=>x.cid));
+  return top+ro+(c.length?`<p><b>${c.length===1?"Is het deze kaart?":"Is het een van deze kaarten?"}</b> Tik erop om hem toe te voegen.</p>`+tilesHTML(c.map(x=>({cid:x.id,name:x.name,img:x.image,num:x.localId,setName:x.setName})),{sub:x=>"#"+esc(x.num)+(x.setName?" · "+esc(x.setName):""),noCount:true,cls:x=>mine.has(x.cid)?"own":""})
+     :`<div class="empty"><div class="em">🤔</div>${esc(scan.msg||"Ik kon de kaart niet vinden.")} Pas hierboven de naam of het nummer aan, of maak een nieuwe foto.</div>`)+
+    `<div class="bar center" style="margin-top:14px"><button class="btn ghost" data-act="scanagain">📷 Nieuwe foto</button></div>`;
+}
+async function mountScan(){
+  const f=$("#sfile");if(f)f.onchange=e=>{const file=e.target.files[0];if(!file)return;const im=new Image();im.onload=()=>{const c=document.createElement("canvas");const r=Math.min(1,1600/Math.max(im.width,im.height));c.width=im.width*r;c.height=im.height*r;c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(im.src);stopCam();processScan(c,true)};im.src=URL.createObjectURL(file)};
+  const v=$("#vid");if(!v)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$("#cam").hidden=true;$("#snapbtn").hidden=true;return}
+  try{
+    if(!camStream)camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1440}},audio:false});
+    v.srcObject=camStream;await v.play().catch(()=>{});
+  }catch(e){$("#cam").hidden=true;$("#snapbtn").hidden=true;scan.msg="De camera mag niet gebruikt worden. Kies hieronder een foto, of geef toestemming voor de camera in de instellingen.";const er=MB.querySelector(".err");if(er)er.textContent=scan.msg}
+}
+function snapFrame(){
+  const v=$("#vid"),box=$("#cam"),fr=box.querySelector(".frame");if(!v||!v.videoWidth)return null;
+  const B=box.getBoundingClientRect(),F=fr.getBoundingClientRect(),vw=v.videoWidth,vh=v.videoHeight;
+  const sc=Math.max(B.width/vw,B.height/vh),ox=(B.width-vw*sc)/2,oy=(B.height-vh*sc)/2;
+  const x=(F.left-B.left-ox)/sc,y=(F.top-B.top-oy)/sc,w=F.width/sc,h=F.height/sc;
+  const c=document.createElement("canvas");c.width=Math.round(Math.min(900,w));c.height=Math.round(c.width*h/w);
+  c.getContext("2d").drawImage(v,x,y,w,h,0,0,c.width,c.height);return c;
+}
+function cropPrep(src,x0,y0,x1,y1,width,invert){
+  // uitsnede vergroten en per buurt zwart-wit maken, zodat donkere tekst op elke achtergrondkleur leesbaar wordt
+  const sw=src.width*(x1-x0),sh=src.height*(y1-y0),c=document.createElement("canvas");
+  c.width=width;c.height=Math.round(width*sh/sw);const g=c.getContext("2d"),W=c.width,H=c.height;
+  g.imageSmoothingQuality="high";g.drawImage(src,src.width*x0,src.height*y0,sw,sh,0,0,W,H);
+  const im=g.getImageData(0,0,W,H),d=im.data,L=new Float32Array(W*H),I=new Float64Array((W+1)*(H+1));
+  for(let p=0,i=0;p<W*H;p++,i+=4){let l=.299*d[i]+.587*d[i+1]+.114*d[i+2];L[p]=invert?255-l:l}
+  for(let y=0;y<H;y++){let row=0;for(let x=0;x<W;x++){row+=L[y*W+x];I[(y+1)*(W+1)+x+1]=I[y*(W+1)+x+1]+row}}
+  const r=Math.max(8,Math.round(Math.min(W,H)/6));
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const xa=Math.max(0,x-r),xb=Math.min(W,x+r+1),ya=Math.max(0,y-r),yb=Math.min(H,y+r+1);
+    const m=(I[yb*(W+1)+xb]-I[ya*(W+1)+xb]-I[yb*(W+1)+xa]+I[ya*(W+1)+xa])/((xb-xa)*(yb-ya));
+    const v=L[y*W+x]<m*0.78?0:255,i=(y*W+x)*4;d[i]=d[i+1]=d[i+2]=v}
+  g.putImageData(im,0,0);return c;
+}
+const NOISE=new Set(["basic","stage","stagel","stage1","stage2","evolves","from","trainer","item","supporter","energy","pokemon","pokémon","tera","ability","put","this","card","onto","your","bench","vmax","vstar","gx","ex","hp","the","and","of","ii","iii"]);
+function parseName(t){
+  const words=(t||"").replace(/[^A-Za-zÀ-ÿ'’.\- ]/g," ").split(/\s+/).map(w=>w.replace(/^[^A-Za-zÀ-ÿ]+|[^A-Za-zÀ-ÿ]+$/g,"")).filter(w=>w.length>=3&&!NOISE.has(w.toLowerCase()));
+  return words.sort((a,b)=>b.length-a.length)[0]||"";
+}
+function parseNum(t){
+  const ms=[...(t||"").replace(/[Oo]/g,"0").replace(/[Il|]/g,"1").matchAll(/(\d{1,3})\s*[\/7]\s*(\d{2,3})(?!\d)/g)].map(m=>[+m[1],+m[2]]).filter(([n,tt])=>n>0&&tt>=10&&n<=tt+120);
+  return ms[0]||null;
+}
+function lev(a,b){a=a.toLowerCase();b=b.toLowerCase();const m=a.length,n=b.length;if(!m||!n)return Math.max(m,n);let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const q=[i];for(let j=1;j<=n;j++)q[j]=Math.min(p[j]+1,q[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=q}return p[n]}
+const nameScore=(ocr,name)=>{if(!ocr)return 0;const best=Math.min(...name.split(/\s+/).map(w=>lev(ocr,w)),lev(ocr,name));return 1-best/Math.max(ocr.length,4)};
+async function processScan(canvas,loose){
+  const T=loose?.22:.15,Bt=loose?.76:.84;
+  scan.img=canvas.toDataURL("image/jpeg",.7);scan.phase="busy";scan.msg="Leesprogramma laden…";redrawM();
+  try{
+    const w=await getOcr();
+    scan.msg="Kaart lezen…";redrawM();
+    await w.setParameters({tessedit_pageseg_mode:"11",tessedit_char_whitelist:""});
+    const top=await w.recognize(cropPrep(canvas,0,0,1,T,1100));
+    await w.setParameters({tessedit_pageseg_mode:"11",tessedit_char_whitelist:"0123456789/"});
+    const bot=await w.recognize(cropPrep(canvas,0,Bt,1,1,1500));
+    let name=parseName(top.data.text);
+    if(!name){const inv=await w.recognize(cropPrep(canvas,0,0,1,T,1100,true));name=parseName(inv.data.text)}
+    let num=parseNum(bot.data.text);
+    if(!num){const inv=await w.recognize(cropPrep(canvas,0,Bt,1,1,1500,true));num=parseNum(inv.data.text)}
+    if(!num){await w.setParameters({tessedit_pageseg_mode:"11",tessedit_char_whitelist:""});
+      for(const iv of [false,true]){const all=await w.recognize(cropPrep(canvas,0,Bt-.04,1,1,1500,iv));num=parseNum(all.data.text);if(num)break}}
+    scan.name=name;scan.num=num?String(num[0]):"";scan.total=num?String(num[1]):"";
+    await findCandidates();
+  }catch(e){console.error(e);scan.phase="done";scan.cands=[];scan.msg=navigator.onLine?"Het lezen lukte niet.":"Scannen kan alleen met internet."}
+  redrawM();
+}
+async function findCandidates(){
+  scan.phase="busy";scan.msg="Kaart zoeken…";redrawM();
+  const name=scan.name.trim(),num=parseInt(scan.num,10),total=parseInt(scan.total,10);let c=[];
+  try{
+    if(num&&total){
+      const sets=await api("/sets"),idx=new Map(sets.map((s,i)=>[s.id,i]));
+      const tots=total>=100?[total,Math.floor(total/10)]:[total];
+      const match=sets.filter(s=>s.cardCount&&tots.includes(s.cardCount.official)).sort((a,b)=>idx.get(b.id)-idx.get(a.id)).slice(0,10);
+      const full=await Promise.all(match.map(s=>api(`/sets/${encodeURIComponent(s.id)}`).catch(()=>null)));
+      full.forEach((s,i)=>{if(!s)return;const k=(s.cards||[]).find(x=>parseInt(x.localId,10)===num);if(k)c.push(Object.assign({},k,{setName:s.name,order:idx.get(s.id)}))});
+      if(name)c.sort((a,b)=>nameScore(name,b.name)-nameScore(name,a.name)||b.order-a.order);
+      if(name&&c.length>1&&nameScore(name,c[0].name)>.6)c=c.filter(x=>nameScore(name,x.name)>.6);
+    }
+    if(!c.length&&name){
+      let l=await api(`/cards?name=${encodeURIComponent(name)}`).catch(()=>[]);
+      if((!l||!l.length)&&name.length>5)l=await api(`/cards?name=${encodeURIComponent(name.slice(0,5))}`).catch(()=>[]);
+      l=(l||[]).slice();if(num)l=l.filter(x=>parseInt(x.localId,10)===num);
+      c=l.reverse().sort((a,b)=>(b.image?1:0)-(a.image?1:0)).slice(0,24);
+    }
+    scan.msg=c.length?"":(!name&&!num?"Ik kon de naam en het nummer niet lezen.":"Ik kon de kaart niet vinden.");
+  }catch(e){scan.msg="De kaartendatabase reageert even niet."}
+  scan.cands=c;scan.phase="done";
+}
+
+/* ---------- klikken ---------- */
+const ACT={
+  prof:el=>setCur(el.dataset.id),
+  sub:el=>{sub=el.dataset.k;renderKaarten()},
+  search:()=>{sres=null;serr="";searchModal()},
+  card:el=>cardModal(el.dataset.cid),
+  cadd:async el=>{const d=await getCard(el.dataset.cid);addCard(d);toast("In de kluis! ✨");redrawM()},
+  cmin:el=>{changeCount(curP().id,el.dataset.cid,-1);redrawM()},
+  cwish:async el=>{const d=await getCard(el.dataset.cid);toggleWish(d);redrawM()},
+  mclose:closeM,mback:backM,
+  trpick:el=>{const s=el.dataset.side==="A"?selA:selB;s.has(el.dataset.id)?s.delete(el.dataset.id):s.add(el.dataset.id);renderKaarten()},
+  trdo:()=>doTrade(),trclear:()=>{selA.clear();selB.clear();renderKaarten()},
+  refresh:()=>refreshPrices(true),
+  set:el=>{setMissingOnly=false;setModal(el.dataset.id)},
+  setall:()=>{setMissingOnly=false;redrawM()},setmiss:()=>{setMissingOnly=true;redrawM()},
+  qstart:()=>{const qs=makeQuestions();if(qs.length<3){toast("Te weinig verschillende kaarten voor een quiz");return}quiz={qs,i:0,score:0,answered:null};renderQuiz()},
+  qans:el=>{if(quiz.answered!=null)return;quiz.answered=+el.dataset.i;if(quiz.answered===quiz.qs[quiz.i].ans)quiz.score++;renderQuiz()},
+  qnext:()=>{quiz.i++;quiz.answered=null;renderQuiz();window.scrollTo({top:0})},
+  dnew:()=>editorModal(newDesign()),
+  dedit:el=>editorModal(state.designs.find(d=>d.id===el.dataset.id)),
+  edtype:el=>{ed[el.dataset.f]=el.dataset.k;el.parentNode.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===el));$("#dpv").innerHTML=designHTML(ed)},
+  pen:el=>{pen.c=el.dataset.c;pen.erase=false;MB.querySelectorAll(".sw[data-act=pen]").forEach(b=>b.setAttribute("aria-pressed",b===el));MB.querySelector("[data-act=erase]").setAttribute("aria-pressed",false)},
+  erase:el=>{pen.erase=!pen.erase;el.setAttribute("aria-pressed",pen.erase)},
+  fill:()=>{const cv=$("#cv"),c=cv.getContext("2d");c.globalCompositeOperation="destination-over";c.fillStyle=pen.c;c.fillRect(0,0,cv.width,cv.height);c.globalCompositeOperation="source-over";
+    const im=c.getImageData(0,0,cv.width,cv.height),bg=[parseInt(pen.c.slice(1,3),16),parseInt(pen.c.slice(3,5),16),parseInt(pen.c.slice(5,7),16)];
+    for(let i=0;i<im.data.length;i+=4){if(im.data[i]>248&&im.data[i+1]>248&&im.data[i+2]>248){im.data[i]=bg[0];im.data[i+1]=bg[1];im.data[i+2]=bg[2]}}c.putImageData(im,0,0);commitCanvas()},
+  clear:()=>{if(!confirm("Hele tekening wissen?"))return;const cv=$("#cv"),c=cv.getContext("2d");c.fillStyle="#fff";c.fillRect(0,0,cv.width,cv.height);ed.img="";$("#dpv").innerHTML=designHTML(ed)},
+  dsave:()=>{if(saveDesign())backM()},
+  dprint:()=>{printDesign(ed)},
+  ddel:()=>{if(!confirm("Deze kaart verwijderen?"))return;const d=state.designs.find(x=>x.id===ed.id);if(d){d.del=true;save()}backM()},
+  settings:()=>settingsModal(),
+  pav:el=>{newAv=el.dataset.a;el.parentNode.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===el))},
+  pedit:el=>profileModal(el.dataset.id),
+  eav:el=>{stack[stack.length-1].state.av=el.dataset.a;el.parentNode.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===el))},
+  ecol:el=>{stack[stack.length-1].state.col=el.dataset.c;el.parentNode.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===el))},
+  esave:()=>{const s=stack[stack.length-1].state,n=$("#ename").value.trim();if(!n)return;Object.assign(s.p,{name:n,av:s.av,col:s.col});save();backM()},
+  edel:()=>{const s=stack[stack.length-1].state;if(!confirm(`${s.p.name} en al zijn kaarten verwijderen?`))return;s.p.del=true;state.cards.forEach(c=>{if(c.p===s.p.id)c.del=true});state.wish.forEach(c=>{if(c.p===s.p.id)c.del=true});save();backM()},
+  backup:()=>downloadBackup(),
+  account:()=>accountModal(),
+  scan:()=>{if(window.PREVIEW&&!window.OCR_SCRIPT){toast("Scannen werkt alleen in de echte app");return}scanModal()},
+  snap:()=>{const c=snapFrame();if(!c){toast("De camera is nog niet klaar");return}stopCam();processScan(c)},
+  scanagain:()=>{scan.phase="cam";scan.msg="";scan.img="";redrawM()},
+  rescan:async()=>{scan.name=$("#scname").value;scan.num=$("#scnum").value;scan.total=$("#sctot").value;await findCandidates();redrawM()},
+};
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-tab]");if(t){setTab(t.dataset.tab);return}
+  const el=e.target.closest("[data-act]");if(!el)return;
+  const f=ACT[el.dataset.act];if(f){e.preventDefault();Promise.resolve(f(el,e)).catch(err=>{console.error(err);toast(navigator.onLine?"Er ging iets mis, probeer het nog eens":"Je bent offline")})}
+});
+document.addEventListener("change",e=>{
+  const s=e.target.closest("[data-trsel]");if(!s)return;
+  if(s.dataset.trsel==="A")trA=s.value;else trB=s.value;
+  if(trA===trB){const o=profs().find(x=>x.id!==s.value);if(s.dataset.trsel==="A")trB=o.id;else trA=o.id}
+  selA.clear();selB.clear();renderKaarten();
+});
+function downloadBackup(tag){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`kaartenkluis-backup-${tag?tag+"-":""}${today()}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- synchronisatie via Supabase (zelfde aanpak als de Taken-app) ---------- */
+const SB_URL="https://fwapfcdqzwrzhihxoxxm.supabase.co";
+const SB_KEY="sb_publishable_RrmkS-_WhduZKCxiaE7QPg_eOokXG8q";
+const MKEY=KEY+":sync",SKIPKEY=KEY+":nologin";
+let sb=null,user=null,pushTimer=null,deferTimer=null,pushing=false,chan=null,lastOk="";
+let meta={uid:null,base:0};try{Object.assign(meta,JSON.parse(localStorage.getItem(MKEY)||"{}"))}catch(e){}
+const saveMeta=()=>{try{localStorage.setItem(MKEY,JSON.stringify(meta))}catch(e){}};
+const dirty=()=>(state.ts||0)>(meta.base||0);
+const hhmm=()=>new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"});
+const hasContent=x=>x&&((x.profiles||[]).some(p=>!p.del)||(x.cards||[]).some(c=>!c.del)||(x.designs||[]).some(d=>!d.del));
+const sameContent=(a,b)=>{const c=o=>JSON.stringify(Object.assign({},o,{ts:0}));return c(a)===c(b)};
+function syncText(){
+  if(window.PREVIEW)return "Voorbeeldversie · niets wordt online opgeslagen";
+  if(!sb)return navigator.onLine?"Opgeslagen op dit apparaat":"Offline · opgeslagen op dit apparaat";
+  if(!user)return "Alleen op dit apparaat · tik ☁️ om in te loggen";
+  if(!navigator.onLine)return "Offline · wordt later gesynchroniseerd";
+  if(dirty()||pushing)return "Synchroniseren…";
+  return lastOk?`Gesynchroniseerd · ${lastOk}`:"Gesynchroniseerd";
+}
+function syncLabel(){$("#sync").textContent=syncText();const a=$("#astat");if(a)a.textContent=syncText();$("#syncbtn").textContent=user?"☁️✓":"☁️"}
+function applyState(d){state=ensure(d);persist();renderAll();if(stack.length&&!busy())redrawM()}
+function busy(){const a=document.activeElement;return !!(a&&a.matches&&a.matches("input,textarea,select")&&!a.closest("#lform"))||(stack.length&&stack[stack.length-1].mount===mountEditor)}
+function schedulePush(ms=800){if(!user)return;clearTimeout(pushTimer);pushTimer=setTimeout(push,ms)}
+async function push(){
+  if(!user||pushing)return;
+  if(!navigator.onLine){syncLabel();return}
+  pushing=true;const snap=state.ts||0;let error=null;
+  try{({error}=await sb.from("collections").upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()}))}catch(e){error=e}
+  pushing=false;
+  if(error){$("#sync").textContent="Synchroniseren mislukt · probeert het zo opnieuw";clearTimeout(pushTimer);pushTimer=setTimeout(push,15000);return}
+  meta.base=Math.max(meta.base||0,snap);saveMeta();lastOk=hhmm();
+  if(dirty())schedulePush(300);else syncLabel();
+}
+async function fetchRow(){
+  try{const {data,error}=await sb.from("collections").select("data,updated_at").eq("user_id",user.id).maybeSingle();if(error)throw error;return data}catch(e){syncLabel();return undefined}
+}
+function handleRemote(row){
+  if(!row||!row.data)return;
+  const r=row.data,rts=r.ts||0;
+  if(rts===state.ts){if(meta.base!==rts){meta.base=rts;saveMeta()}lastOk=hhmm();syncLabel();return}
+  if(rts<=(meta.base||0)){if(dirty())schedulePush(0);return}
+  if(busy()){clearTimeout(deferTimer);deferTimer=setTimeout(()=>handleRemote(row),2000);return}
+  if(dirty()&&state.ts>rts){schedulePush(0);return}
+  const hadLocal=dirty();
+  applyState(r);meta.base=rts;saveMeta();lastOk=hhmm();syncLabel();
+  if(hadLocal)toast("Een nieuwere versie van een ander apparaat is overgenomen");
+}
+async function pull(){
+  if(!user)return;
+  const row=await fetchRow();if(row===undefined)return;
+  if(row===null){if(!state.ts)state.ts=Date.now();schedulePush(0);return}
+  handleRemote(row);
+}
+async function firstSync(){
+  const row=await fetchRow();
+  if(row===undefined){toast("Geen verbinding, synchronisatie volgt later");return false}
+  if(row===null){meta={uid:user.id,base:0};saveMeta();if(!state.ts)state.ts=Date.now();schedulePush(0);toast("De kluis staat nu online");return true}
+  if(hasContent(state)&&!sameContent(state,row.data))downloadBackup("dit-apparaat");
+  applyState(row.data);meta={uid:user.id,base:row.data.ts||0};saveMeta();lastOk=hhmm();
+  toast("De kluis is opgehaald");return true;
+}
+function subscribe(){
+  if(chan)sb.removeChannel(chan);
+  chan=sb.channel("kluis-"+user.id).on("postgres_changes",{event:"*",schema:"public",table:"collections",filter:"user_id=eq."+user.id},p=>{if(p.new&&p.new.data)handleRemote(p.new)}).subscribe();
+}
+async function onLogin(u){
+  user=u;syncLabel();
+  const ok=meta.uid===u.id?(await pull(),true):await firstSync();
+  if(ok!==false)subscribe();
+  syncLabel();if(!profs().length)settingsModal();
+}
+function accountModal(){
+  if(window.PREVIEW){toast("In de voorbeeldversie kun je niet inloggen");return}
+  if(!sb){toast("Synchroniseren is nu niet beschikbaar (geen verbinding)");return}
+  openM(user?"Gezinsaccount":"Inloggen",()=>user?`<p>Ingelogd als <b>${esc(user.email)}</b></p><p class="muted small" id="astat">${esc(syncText())}</p>
+      <div class="bar"><button class="btn ghost" data-act="anow">🔄 Nu synchroniseren</button><button class="btn red" data-act="alogout">Uitloggen</button></div>`
+    :`<p class="muted">Log in met het gezinsaccount, dan is de kluis op elk apparaat hetzelfde.</p>
+      <form id="lform" class="lform"><input class="inp" id="lemail" type="email" autocomplete="username" placeholder="E-mailadres" aria-label="E-mailadres">
+      <input class="inp" id="lpass" type="password" autocomplete="current-password" placeholder="Wachtwoord" aria-label="Wachtwoord">
+      <div class="err" id="lerr" role="alert"></div><button class="btn" id="lbtn">Inloggen</button><button type="button" class="btn ghost" data-act="lskip">Nu niet, alleen op dit apparaat</button></form>`);
+  stack[stack.length-1].mount=()=>{const f=$("#lform");if(!f)return;setTimeout(()=>$("#lemail").focus(),40);
+    f.onsubmit=async e=>{e.preventDefault();const em=$("#lemail").value.trim(),pw=$("#lpass").value,err=$("#lerr"),btn=$("#lbtn");
+      if(!em||!pw){err.textContent="Vul e-mailadres en wachtwoord in.";return}
+      btn.disabled=true;btn.textContent="Bezig…";err.textContent="";
+      try{const {data,error}=await sb.auth.signInWithPassword({email:em,password:pw});if(error)throw error;
+        try{localStorage.removeItem(SKIPKEY)}catch(_){}closeM();await onLogin(data.user)}
+      catch(x){err.textContent=/invalid/i.test(x.message||"")?"E-mailadres of wachtwoord klopt niet.":(navigator.onLine?"Inloggen lukte niet: "+(x.message||"onbekende fout"):"Je bent offline.");btn.disabled=false;btn.textContent="Inloggen"}}};
+  drawM();
+}
+Object.assign(ACT,{
+  lskip:()=>{try{localStorage.setItem(SKIPKEY,"1")}catch(e){}closeM();if(!profs().length)settingsModal()},
+  anow:async()=>{$("#sync").textContent="Synchroniseren…";await pull();if(dirty())await push();syncLabel();redrawM()},
+  alogout:async()=>{if(!confirm("Uitloggen? De kaarten blijven op dit apparaat staan, maar worden niet meer gesynchroniseerd."))return;
+    await sb.auth.signOut();user=null;if(chan){sb.removeChannel(chan);chan=null}closeM();syncLabel()},
+});
+window.addEventListener("online",()=>{syncLabel();pull()});
+window.addEventListener("offline",syncLabel);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pull()});
+setInterval(()=>{if(document.visibilityState==="visible")pull()},60000);
+async function initSync(){
+  if(window.PREVIEW||!window.supabase||!window.supabase.createClient){syncLabel();if(!profs().length)settingsModal();return}
+  try{sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"kaartenkluis-auth"}})}catch(e){sb=null;syncLabel();return}
+  sb.auth.onAuthStateChange((ev,session)=>{if(ev==="SIGNED_OUT"){user=null;syncLabel()}else if(session&&session.user&&user){user=session.user}});
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session&&data.session.user)onLogin(data.session.user);
+  else{syncLabel();let skip=false;try{skip=localStorage.getItem(SKIPKEY)==="1"}catch(e){}if(!skip)accountModal();else if(!profs().length)settingsModal()}
+}
+
+renderAll();
+initSync().then(()=>setTimeout(()=>refreshPrices(false),1500));
+if("serviceWorker" in navigator&&!window.PREVIEW&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
